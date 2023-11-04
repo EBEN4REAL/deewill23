@@ -1,4 +1,101 @@
-<!DOCTYPE html>
+<?php
+
+if (isset($_POST["submit"])) {
+   $full_name = $_POST['full_name'];
+   $email = $_POST['email'];
+   $phone = $_POST['phone'];
+   $passcode = bin2hex(random_bytes(5));
+
+   if (empty($full_name) || empty($email) || empty($phone)) {
+      die("Please fill in all fields.");
+   }
+   
+   if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+      die("Invalid email format.");
+   }
+   
+   $host = "127.0.0.1";
+   $username = "root";
+   $password = "";
+   $database = "deewill";
+   
+   $mysqli = new mysqli($host, $username, $password, $database);
+   
+   if ($mysqli->connect_error) {
+      die("Connection failed: " . $mysqli->connect_error);
+   }
+
+   $sql = "SELECT COUNT(*) FROM `wedding-registration` WHERE `email` = ?";
+
+   $stmt = $mysqli->prepare($sql);
+   $stmt->bind_param("s", $email);
+   $stmt->execute();
+   $stmt->bind_result($count);
+   $stmt->fetch();
+   $stmt->close();
+
+   if ($count > 0) {
+      $script = <<< JS
+         alert("Email already exists. Please choose a different email.");
+      JS;
+   } else {
+      $sql = "INSERT INTO `wedding-registration` (`full_name`, `email`, `phone`, `passcode`) VALUES (?, ?, ?, ?)";
+      $insert_stmt = $mysqli->prepare($sql);
+      $insert_stmt->bind_param("ssss", $full_name, $email, $phone, $passcode);
+      
+      if ($insert_stmt->execute()) {
+         $script = <<< JS
+         document.querySelector(".modal-").classList.toggle('toggle-modal');
+         const button = document.querySelector("button"),
+         toast = document.querySelector(".toast");
+         (closeIcon = document.querySelector(".close")),
+         (progress = document.querySelector(".progress"));
+
+         let timer1, timer2;
+
+         button.addEventListener("click", () => {
+         toast.classList.add("active");
+         progress.classList.add("active");
+
+         timer1 = setTimeout(() => {
+            toast.classList.remove("active");
+         }, 5000); //1s = 1000 milliseconds
+
+         timer2 = setTimeout(() => {
+            progress.classList.remove("active");
+         }, 5300);
+         });
+
+         toast.classList.add("active");
+         progress.classList.add("active");
+
+         timer1 = setTimeout(() => {
+            toast.classList.remove("active");
+         }, 15000); //1s = 1000 milliseconds
+
+         timer2 = setTimeout(() => {
+            progress.classList.remove("active");
+         }, 15000);
+
+         closeIcon.addEventListener("click", () => {
+            toast.classList.remove("active");
+
+            setTimeout(() => {
+               progress.classList.remove("active");
+            }, 3000);
+
+            clearTimeout(timer1);
+            clearTimeout(timer2);
+         });
+         JS;
+      }
+      $insert_stmt->close();
+   }
+}
+
+// $mysqli->close()
+?>
+
 <html lang="en">
    <head>
       <!-- basic -->
@@ -32,6 +129,70 @@
    </head>
    <!-- body -->
    <body class="main-layout">
+      <!-- <div id="demo-modal" class="modal">
+         <div class="modal__content">
+            <h1>Reception Venue:</h1>
+
+            <p>
+               <strong>Passcode</strong>: 895h39h5339h
+            </p>
+
+            <div class="modal__foote mt-3">
+               <strong>Address</strong>: City Park Abuja <i class="fa fa-heart"></i><br>
+               Ahmadu Bello Way, Wuse 904101, Abuja, Federal Capital Territory, Nigeria
+            </div>
+
+            <a href="#" class="modal__close">&times;</a>
+         </div>
+      </div> -->
+      <!-- Modal -->
+      <div class="modal- toggle-modal" id="modal-one" aria-hidden="true">
+         <div class="modal-dialog-">
+            <div class="modal-header-">
+               <h1>Reception Venue:</h1>
+               <div class="btn-close cursor-pointer" aria-hidden="true" onClick="toggleModal()">×</div>
+            </div>
+            <div class="modal-body-">
+               <div class="p-2 panel-tip">
+               <i class="fa fa-info-circle mr-1 info" aria-hidden="true"></i>
+               please copy the following details to safe place as it will be lost when you leave this page</div>
+               <p class="mt-3"><strong class="passcode ">Passcode</strong>: <?php echo '<span class="deewill-info">' . $passcode . '</span>'; ?></p>
+               <div class="mt-3">
+                  <strong class="address">Address</strong>: City Park Abuja <i class="fa fa-heart address"></i><br>
+                  Ahmadu Bello Way, Wuse 904101, Abuja, Federal Capital Territory, Nigeria
+               </div>
+            </div>
+            <div class="modal-footer-"> 
+               <button href="#modal-one" class="btn btn-primary mr-2" onClick="toggleMap()">See address</button>
+               <button  class="btn btn-danger" onClick="toggleModal()">Cancel</button>
+            </div>
+         </div>
+      </div>
+      <!-- Map Start -->
+      <div class="map hide-map">
+         <button  class="btn btn-danger map-toggle" onClick="toggleMap()">Hide Map</button>
+         <iframe src="https://www.google.com/maps/embed?pb=!1m26!1m12!1m3!1d4046971.639199464!2d2.8124954691234243!3d7.882434022338342!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!4m11!3e6!4m3!3m2!1d6.705370599999999!2d3.4296455999999997!4m5!1s0x104e0af9bbf0f9cd%3A0xda36fd8547df95af!2sCity%20Park%20Abuja%20%0D%0AAhmadu%20Bello%20Way%2C%20Wuse%20904101%2C%20Abuja%2C%20Federal%20Capital%20Territory%2C%20Nigeria!3m2!1d9.0760635!2d7.475778099999999!5e0!3m2!1sen!2sng!4v1699060631725!5m2!1sen!2sng" style="width: 100%; height: 100%"  style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+      </div>
+      <!-- Map End -->
+
+      <!-- Success Toast Start -->
+      <div class="toast display-non">
+         <div class="toast-content">
+         <i class="fa fa-check check" aria-hidden="true"></i>
+
+            <div class="message">
+               <span class="text text-1">Success</span>
+               <span class="text text-2">Your registration is  successful!</span>
+            </div>
+         </div>
+         <i class="fa fa-times close" aria-hidden="true"></i>
+
+         <!-- Remove 'active' class, this is just to show in Codepen thumbnail -->
+         <div class="progress active"></div>
+      </div>
+      <!-- Success Toast End -->
+      
       <!-- loader  -->
       <div class="loader_bg">
          <div class="loader"><img src="images/loading.gif" alt="#"/></div>
@@ -80,14 +241,14 @@
                            </div>
                         </div>
                         <!-- controls -->
-                        <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
+                        <!-- <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
                         <i class="fa fa-angle-left" aria-hidden="true"></i>
                         <span class="sr-only">Previous</span>
                         </a>
                         <a class="carousel-control-next" href="#carouselExampleIndicators" role="button" data-slide="next">
                         <i class="fa fa-angle-right" aria-hidden="true"></i>
                         <span class="sr-only">Next</span>
-                        </a>
+                        </a> -->
                      </div>
                   </div>
                </div>
@@ -285,26 +446,26 @@
                   </div>
                </div>
                <div class="col-md-6">
-                  <form id="request" class="main_form">
+                  <form id="request" class="main_form" method="POST">
                      <div class="row">
                         <div class="col-md-12 ">
-                           <label>Enter passcode to access wedding reception</label>
-                           <input class="contactus" placeholder="" type="type" name=" Name"> 
+                           <label>Full name</label>
+                           <input class="contactus" placeholder="" type="type" name="full_name"> 
                         </div>
-                        <!-- <div class="col-md-6">
+                        <div class="col-md-12">
                            <label>Phone Number</label>
-                           <input class="contactus" placeholder="" type="type" name="Phone Number">                          
+                           <input class="contactus" placeholder="" type="type" name="phone">                          
                         </div>
                         <div class="col-md-12">
                            <label>Email</label>
-                           <input class="contactus" placeholder="" type="type" name="Email"> 
+                           <input class="contactus" placeholder="" type="type" name="email"> 
                         </div>
-                        <div class="col-md-12">
+                        <!-- <div class="col-md-12">
                            <label>Message</label>
                            <textarea class="textarea" placeholder="" type="type" Message="Name"></textarea>
                         </div> -->
                         <div class="col-md-12">
-                           <button class="send_btn">Get Location</button>
+                           <button class="send_btn" type="submit" name="submit">Register</button>
                         </div>
                      </div>
                   </form>
@@ -428,4 +589,21 @@
          }
       </script>
    </body>
+
+   <script>
+      const modal = document.querySelector(".modal-");
+      
+      function toggleModal() {
+         const confirm = window.confirm("Are you sure you want to leave this page? You will loose access to this information when you leave this page")
+         if(confirm) {
+            modal.classList.toggle('toggle-modal')
+         }
+      }
+
+      function toggleMap() {
+         const map = document.querySelector(".map")
+         map.classList.toggle("hide-map")
+      }
+   </script>
+   <script><?= $script ?></script>
 </html>
