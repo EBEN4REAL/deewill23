@@ -92,8 +92,6 @@ if (isset($_POST["submit"])) {
       $insert_stmt->close();
    }
 }
-
-// $mysqli->close()
 ?>
 
 <html lang="en">
