@@ -175,7 +175,7 @@ if (isset($_POST["submit"])) {
       <!-- Map End -->
 
       <!-- Success Toast Start -->
-      <div class="toast display-non">
+      <div class="toast">
          <div class="toast-content">
          <i class="fa fa-check check" aria-hidden="true"></i>
 
