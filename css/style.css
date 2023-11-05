@@ -1071,21 +1071,21 @@ background:#021626db;
  }
  .modal- .modal-dialog- {
      background: #fefefe;
-     border: #333333 solid 1px;
-     border-radius: 5px;
-     margin-left: -200px;
-     position: fixed;
-     left: 50%;
-     z-index: 11;
-     width: 360px;
-     -webkit-transform: translate(0, 0);
-     -ms-transform: translate(0, 0);
-     transform: translate(0, 0);
-     -webkit-transition: -webkit-transform 0.3s ease-out;
-     -moz-transition: -moz-transform 0.3s ease-out;
-     -o-transition: -o-transform 0.3s ease-out;
-     transition: transform 0.3s ease-out;
-     top: 20%;
+    border: #333333 solid 1px;
+    border-radius: 5px;
+    /* margin-left: -200px; */
+    position: fixed;
+    left: 50%;
+    z-index: 11;
+    width: 360px;
+    -webkit-transform: translate(0, 0);
+    -ms-transform: translate(0, 0);
+    transform: translateX(-50%);
+    -webkit-transition: -webkit-transform 0.3s ease-out;
+    -moz-transition: -moz-transform 0.3s ease-out;
+    -o-transition: -o-transform 0.3s ease-out;
+    transition: transform 0.3s ease-out;
+    top: 20%;
  }
  .modal-:target .modal-dialog- {
      top: -100%;
@@ -1147,7 +1147,8 @@ background:#021626db;
  }
  .map-toggle {
      position: absolute;
-     top: 20px;
+     right: 20px;
+     bottom: 30px;
      left: 50%;
      transform: translateX(-50%);
  }
@@ -1259,3 +1260,36 @@ background:#021626db;
      overflow-x: hidden;
    }
    
+   #confetti {
+     overflow-y: hidden;
+     overflow-x: hidden;
+     width: 100%;
+     margin: 0;
+     height: 100%;
+     position: absolute;
+     top: 0;
+   }
+
+   .text-warning {
+     position: fixed;
+     top: 40px;
+     left: 50%;
+     background: red;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     padding: 10px;
+     margin: 0 auto;
+     z-index: 9999999999999999999999999999999;
+     transform: translateX(-50%);
+   }
+
+   ._text-warning {
+     background: red;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     padding: 10px;
+     padding-bottom: 15px;
+     margin-bottom: 15px
+   }

@@ -4,10 +4,22 @@ if (isset($_POST["submit"])) {
    $full_name = $_POST['full_name'];
    $email = $_POST['email'];
    $phone = $_POST['phone'];
+   $side = $_POST['side'];
+   $plus_one = $_POST['plus-one'];
+   $plus_one_name = $_POST['plus-one-name'];
+   $plus_one_email = $_POST['plus-one-email'];
+   $plus_one_address = $_POST['plus-one-address'];
+   
    $passcode = bin2hex(random_bytes(5));
 
    if (empty($full_name) || empty($email) || empty($phone)) {
       die("Please fill in all fields.");
+   }
+
+   if($plus_one === "yes") {
+      if (empty($plus_one_name) || empty($plus_one_email) || empty($plus_one_address)) {
+         die("Please fill in all plus one details");
+      }
    }
    
    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -39,11 +51,21 @@ if (isset($_POST["submit"])) {
          alert("Email already exists. Please choose a different email.");
       JS;
    } else {
-      $sql = "INSERT INTO `wedding-registration` (`full_name`, `email`, `phone`, `passcode`) VALUES (?, ?, ?, ?)";
-      $insert_stmt = $mysqli->prepare($sql);
-      $insert_stmt->bind_param("ssss", $full_name, $email, $phone, $passcode);
+      if($plus_one === "yes") {
+         $sql = "INSERT INTO `wedding-registration` (`full_name`, `email`, `phone`, `passcode`, `side`, `plus-one-name`, `plus-one-email`, `plus-one-address`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+         $insert_stmt = $mysqli->prepare($sql);
+         $insert_stmt->bind_param("ssssssss", $full_name, $email, $phone, $passcode, $side, $plus_one_name, $plus_one_email, $plus_one_address);
+      } else {
+         $sql = "INSERT INTO `wedding-registration` (`full_name`, `email`, `phone`, `passcode`, `side`) VALUES (?, ?, ?, ?, ?)";
+         $insert_stmt = $mysqli->prepare($sql);
+         $insert_stmt->bind_param("sssss", $full_name, $email, $phone, $passcode, $side);
+      }
       
-      if ($insert_stmt->execute()) {
+      if ($insert_stmt->execute() ) {
+         $passcode_text = $passcode;
+         if ($plus_one === "yes") {
+            $passcode_text .= ' (+1)';
+         }
          $script = <<< JS
          document.querySelector(".modal-").classList.toggle('toggle-modal');
          const button = document.querySelector("button"),
@@ -59,7 +81,7 @@ if (isset($_POST["submit"])) {
 
          timer1 = setTimeout(() => {
             toast.classList.remove("active");
-         }, 5000); //1s = 1000 milliseconds
+         }, 5000); 
 
          timer2 = setTimeout(() => {
             progress.classList.remove("active");
@@ -124,6 +146,7 @@ if (isset($_POST["submit"])) {
       <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script><![endif]-->
+      <script src="confetti.js"></script>
    </head>
    <!-- body -->
    <body class="main-layout">
@@ -144,7 +167,13 @@ if (isset($_POST["submit"])) {
          </div>
       </div> -->
       <!-- Modal -->
+      <canvas id="confetti"></canvas>
+
+
       <div class="modal- toggle-modal" id="modal-one" aria-hidden="true">
+         <div class="text-warning text-white">
+            NOTE: CHILDREN ARE NOT ALLOWED
+         </div>
          <div class="modal-dialog-">
             <div class="modal-header-">
                <h1>Reception Venue:</h1>
@@ -153,9 +182,17 @@ if (isset($_POST["submit"])) {
             <div class="modal-body-">
                <div class="p-2 panel-tip">
                <i class="fa fa-info-circle mr-1 info" aria-hidden="true"></i>
-               please copy the following details to safe place as it will be lost when you leave this page</div>
-               <p class="mt-3"><strong class="passcode ">Passcode</strong>: <?php echo '<span class="deewill-info">' . $passcode . '</span>'; ?></p>
-               <div class="mt-3">
+               please copy the following details to safe place or take a screenshot of this page as this information will be lost when you leave this page</div>
+               <p class="mt-2"><strong class="passcode ">Passcode</strong>: <?php echo '<span class="deewill-info">' . $passcode_text  . '</span>'; ?></p>
+               <?php 
+                  if($plus_one === "yes") {
+                     echo "
+                        <p class=\"mt-2 p-2 plus-one-div panel-tip\">Your plus one is ".$plus_one_name."</p>
+                     ";
+                  }
+               ?>
+               
+               <div class="mt-2">
                   <strong class="address">Address</strong>: City Park Abuja <i class="fa fa-heart address"></i><br>
                   Ahmadu Bello Way, Wuse 904101, Abuja, Federal Capital Territory, Nigeria
                </div>
@@ -265,12 +302,12 @@ if (isset($_POST["submit"])) {
                      <div class="collapse navbar-collapse" id="navbarsExample04">
                         <ul class="navbar-nav mr-auto">
                            <li class="nav-item active">
-                              <a class="nav-link" href="index.html">Home</a>
+                              <a class="nav-link" href="index.php">Home</a>
                            </li>
                            
                            
                            <li class="nav-item">
-                              <a class="nav-link" href="gallery.html">Gallery</a>
+                              <a class="nav-link" href="gallery.php">Gallery</a>
                            </li>
                            <li class="nav-item">
                               <a href="tel:+2348134207599" class="nav-link" data-animation="animated bounceInLeft">Contact Us</a>
@@ -445,23 +482,50 @@ if (isset($_POST["submit"])) {
                </div>
                <div class="col-md-6">
                   <form id="request" class="main_form" method="POST">
+                     
                      <div class="row">
-                        <div class="col-md-12 ">
+                        <div class="_text-warning py-2 text-white col-md-12 ml-2 mr-2">
+                           NOTE: CHILDREN ARE NOT ALLOWED
+                        </div>
+                        <div class="col-md-6 ">
                            <label>Full name</label>
                            <input class="contactus" placeholder="" type="type" name="full_name"> 
                         </div>
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                            <label>Phone Number</label>
                            <input class="contactus" placeholder="" type="type" name="phone">                          
                         </div>
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                            <label>Email</label>
                            <input class="contactus" placeholder="" type="type" name="email"> 
                         </div>
-                        <!-- <div class="col-md-12">
-                           <label>Message</label>
-                           <textarea class="textarea" placeholder="" type="type" Message="Name"></textarea>
-                        </div> -->
+                        <div class="col-md-6">
+                           <label>Who do you know?</label>
+                           <select name="side" class="contactus">
+                              <option name="bride" value="bride">Bride</option>
+                              <option name="groom" value="bride">Groom</option>
+                              <option name="both" value="bride">both</option>
+                           </select>
+                        </div>
+                        <div class="col-md-6">
+                           <label>Do you have a plus one?</label>
+                           <select name="plus-one" class="contactus" id="plus-one-select" onchange="handlePlusOne()">
+                              <option name="no" value="no">No</option>
+                              <option name="yes" value="yes">Yes</option>
+                           </select>
+                        </div>
+                        <div class="col-md-6 plus-one-info" style="display: none">
+                           <label>Plus one name</label>
+                           <input class="contactus" placeholder="" type="type" name="plus-one-name"> 
+                        </div>
+                        <div class="col-md-6 plus-one-info" style="display: none">
+                           <label>Plus one email</label>
+                           <input class="contactus " placeholder="" type="type" name="plus-one-email"> 
+                        </div>
+                        <div class="col-md-6 plus-one-info" style="display: none">
+                           <label>Plus one address</label>
+                           <textarea row="5" class="contactus" placeholder="" type="type" name="plus-one-address"> </textarea>
+                        </div>
                         <div class="col-md-12">
                            <button class="send_btn" type="submit" name="submit">Register</button>
                         </div>
@@ -571,6 +635,7 @@ if (isset($_POST["submit"])) {
       <script src="js/custom.js"></script>
       <script type="text/javascript">
          baguetteBox.run('.tz-gallery');
+         
       </script>
       <script type="text/javascript">
          window.onscroll = function() {myFunction()};
@@ -585,9 +650,13 @@ if (isset($_POST["submit"])) {
             header.classList.remove("sticky");
           }
          }
-      </script>
-   </body>
 
+        
+      </script>
+
+   
+   </body>
+   
    <script>
       const modal = document.querySelector(".modal-");
       
@@ -602,6 +671,134 @@ if (isset($_POST["submit"])) {
          const map = document.querySelector(".map")
          map.classList.toggle("hide-map")
       }
+
+      function handlePlusOne()  {
+            const plusOneSelect = document.querySelector("#plus-one-select");
+            const val = plusOneSelect.value
+            console.log("val", val)
+            const plusOneInputs = [...document.querySelectorAll(".plus-one-info")]
+
+            console.log("plusOneInputs", plusOneInputs)
+
+            if(val === "yes")
+            {
+               plusOneInputs.forEach(input => {
+                  console.log("input",input)
+                  input.style.display = "block"
+               })
+            }
+            else
+            {
+               plusOneInputs.forEach(input => {
+                  input.style.display = "none"
+               })
+            }
+         }
+
+
+     
+
+
+      // confetti
+      let W = window.innerWidth;
+      let H = document.getElementById('confetti').clientHeight;
+      const canvas = document.getElementById('confetti');
+      const context = canvas.getContext("2d");
+      const maxConfettis = 25;
+      const particles = [];
+
+      const possibleColors = [
+      "#ff7336",
+      "#f9e038",
+      "#02cca4",
+      "#383082",
+      "#fed3f5",
+      "#b1245a",
+      "#f2733f"
+      ];
+
+      function randomFromTo(from, to) {
+      return Math.floor(Math.random() * (to - from + 1) + from);
+      }
+
+      function confettiParticle() {
+      this.x = Math.random() * W; // x
+      this.y = Math.random() * H - H; // y
+      this.r = randomFromTo(11, 33); // radius
+      this.d = Math.random() * maxConfettis + 11;
+      this.color =
+         possibleColors[Math.floor(Math.random() * possibleColors.length)];
+      this.tilt = Math.floor(Math.random() * 33) - 11;
+      this.tiltAngleIncremental = Math.random() * 0.07 + 0.05;
+      this.tiltAngle = 0;
+
+      this.draw = function() {
+         context.beginPath();
+         context.lineWidth = this.r / 2;
+         context.strokeStyle = this.color;
+         context.moveTo(this.x + this.tilt + this.r / 3, this.y);
+         context.lineTo(this.x + this.tilt, this.y + this.tilt + this.r / 5);
+         return context.stroke();
+      };
+      }
+
+      function Draw() {
+      const results = [];
+
+      // Magical recursive functional love
+      requestAnimationFrame(Draw);
+
+      context.clearRect(0, 0, W, window.innerHeight);
+
+      for (var i = 0; i < maxConfettis; i++) {
+         results.push(particles[i].draw());
+      }
+
+      let particle = {};
+      let remainingFlakes = 0;
+      for (var i = 0; i < maxConfettis; i++) {
+         particle = particles[i];
+
+         particle.tiltAngle += particle.tiltAngleIncremental;
+         particle.y += (Math.cos(particle.d) + 3 + particle.r / 2) / 2;
+         particle.tilt = Math.sin(particle.tiltAngle - i / 3) * 15;
+
+         if (particle.y <= H) remainingFlakes++;
+
+         // If a confetti has fluttered out of view,
+         // bring it back to above the viewport and let if re-fall.
+         if (particle.x > W + 30 || particle.x < -30 || particle.y > H) {
+            particle.x = Math.random() * W;
+            particle.y = -30;
+            particle.tilt = Math.floor(Math.random() * 10) - 20;
+         }
+      }
+
+      return results;
+      }
+
+      window.addEventListener(
+      "resize",
+      function() {
+         W = window.innerWidth;
+         H = window.innerHeight;
+         canvas.width = window.innerWidth;
+         canvas.height = window.innerHeight;
+      },
+      false
+      );
+
+      // Push new confetti objects to `particles[]`
+      for (var i = 0; i < maxConfettis; i++) {
+      particles.push(new confettiParticle());
+      }
+
+      // Initialize
+      canvas.width = W;
+      canvas.height = H;
+      Draw();
+
    </script>
    <script><?= $script ?></script>
+   
 </html>
